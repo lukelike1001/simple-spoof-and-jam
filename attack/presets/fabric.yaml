@@ -1,15 +1,17 @@
-type: "drift"
+type: "fabric"
 
 canberra:
-  drift_rate_lat: 0
-  drift_rate_lon: 0.03
+  fabric_lat: -35.263261
+  fabric_lon: 149.26523
+  fabric_alt: 614.0
   activation_alt: 614.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 
 ornl:
-  drift_rate_lat: 0.05
-  drift_rate_lon: 0
+  fabric_lat: 35.9442323021756
+  fabric_lon: -84.31181199768014
+  fabric_alt: 50.0
   activation_alt: 25.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 5

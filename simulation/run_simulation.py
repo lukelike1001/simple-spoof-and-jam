@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import shutil
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 import yaml
 
@@ -55,6 +58,8 @@ class GpsSpoofingSimulation:
 
 
     def run_spoofing_simulation(self, attack_type: str, spawn_location: str):
+        start_ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        print(f"Run start (UTC): {start_ts}")
         self.initialize_spoofing_simulation_components(attack_type, spawn_location)
         self.configure_ardupilot_connection(attack_type)
 
@@ -64,9 +69,28 @@ class GpsSpoofingSimulation:
         gps_receiver.update_velocity(0.0, 0.0, 0.0)
 
         print("Activating GPS Spoofing Attack...")
+        print("Waiting for the flight to finish (arm, then disarm)...")
         self.sdr.activate_gps_attack(gps_receiver, self.connection)
-        print("Log results here - Placeholder!")
+        time.sleep(2)
+        self.save_flight_log(attack_type, spawn_location, start_ts)
         self.connection.close()
+
+
+    def save_flight_log(self, attack_type: str, spawn_location: str, start_ts: str) -> None:
+        """Copy the newest DataFlash .BIN; UTC start/end are in the filename."""
+        Path("logs").mkdir(parents=True, exist_ok=True)
+        end_ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        logs_dir = Path("logs")
+        stem = f"{attack_type}_{spawn_location}_{start_ts}_{end_ts}"
+        bins = sorted(logs_dir.glob("*.BIN"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if bins:
+            dest = logs_dir / f"{stem}.bin"
+            shutil.copy(bins[0], dest)
+            print(f"Saved flight log: {dest}")
+            print(f"Run start (UTC): {start_ts}")
+            print(f"Run end   (UTC): {end_ts}")
+        else:
+            print("WARNING: no DataFlash .BIN found in logs/")
     
 
     @staticmethod
@@ -77,7 +101,7 @@ class GpsSpoofingSimulation:
         )
         parser.add_argument(
             "--attack-type",
-            choices=["passthrough", "static", "dynamic", "drift"],
+            choices=["passthrough", "fabric", "drift", "jamming"],
             default="passthrough",
             help="GPS attack type to apply (default: passthrough, no attack)",
         )

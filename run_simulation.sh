@@ -1,9 +1,9 @@
 #!/bin/bash
-# Usage: ./run_simulation.sh --attack-type {passthrough|static|dynamic|drift} --spawn-location {ornl|canberra}
+# Usage: ./run_simulation.sh --attack-type {passthrough|fabric|drift|jamming} --spawn-location {ornl|canberra}
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 --attack-type {passthrough|static|dynamic|drift} --spawn-location {ornl|canberra}" >&2
+    echo "Usage: $0 --attack-type {passthrough|fabric|drift|jamming} --spawn-location {ornl|canberra}" >&2
     exit 1
 }
 
@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$ATTACK_TYPE" in
-    passthrough|static|dynamic|drift) ;;
+    passthrough|fabric|drift|jamming) ;;
     *) echo "Invalid --attack-type: '$ATTACK_TYPE'" >&2; usage ;;
 esac
 
@@ -32,13 +32,16 @@ cd "$(dirname "$0")"
 bash clear_persistent.sh
 mkdir -p logs
 
+START_TS=$(date -u +%Y%m%dT%H%M%SZ)
+
 read -r LAT LON ALT < <(python3 -c "
 import yaml
 coords = yaml.safe_load(open('plans/spawn_point_lookup.yaml'))['${SPAWN_LOCATION}']
 print(coords['lat'], coords['lon'], coords['alt'])
 ")
 
-SITL_LOG="logs/${ATTACK_TYPE}_${SPAWN_LOCATION}.log"
+SITL_LOG="logs/${ATTACK_TYPE}_${SPAWN_LOCATION}_${START_TS}.log"
+echo "Run start (UTC): ${START_TS}"
 echo "Starting SITL (${SPAWN_LOCATION}) at ${LAT},${LON},${ALT}. Log: ${SITL_LOG}"
 sim_vehicle.py -v ArduCopter \
     --custom-location="${LAT},${LON},${ALT},0" \
@@ -69,11 +72,22 @@ while true; do
         pkill -f 'mavproxy.py.*5760' || true
         pkill -f 'xterm.*ArduCopter' || true
         sleep 2
-        BIN_LOG=$(ls -t logs/*.BIN 2>/dev/null | head -1)
+        END_TS=$(date -u +%Y%m%dT%H%M%SZ)
+        RUN_STEM="${ATTACK_TYPE}_${SPAWN_LOCATION}_${START_TS}_${END_TS}"
+        echo "Run start (UTC): ${START_TS}"
+        echo "Run end   (UTC): ${END_TS}"
+        {
+            echo ""
+            echo "gps-attack run start (UTC): ${START_TS}"
+            echo "gps-attack run end   (UTC): ${END_TS}"
+        } >> "$SITL_LOG"
+        mv "$SITL_LOG" "logs/${RUN_STEM}.log"
+        BIN_LOG=$(ls -t logs/*.BIN 2>/dev/null | head -1 || true)
         if [[ -n "$BIN_LOG" ]]; then
-            BIN_DEST="logs/${ATTACK_TYPE}_${SPAWN_LOCATION}.bin"
-            cp "$BIN_LOG" "$BIN_DEST"
-            echo "Saved flight log: ${BIN_DEST}"
+            cp "$BIN_LOG" "logs/${RUN_STEM}.bin"
+            echo "Saved flight log: logs/${RUN_STEM}.bin"
+        else
+            echo "WARNING: no DataFlash .BIN found in logs/"
         fi
         echo "Done."
         break

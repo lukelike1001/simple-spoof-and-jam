@@ -1,8 +1,0 @@
-type: "static"
-
-ornl:
-  fabric_lat: 35.9442323021756
-  fabric_lon: -84.31181199768014
-  fabric_alt: 50.0
-
-# recommendation: set coords outside the geofence for a static attack

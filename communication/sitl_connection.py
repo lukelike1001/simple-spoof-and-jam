@@ -92,6 +92,14 @@ class SitlConnection:
         return self._mav
 
 
+    def poll_armed(self) -> bool | None:
+        """Non-blocking: True/False if a vehicle HEARTBEAT arrived, else None."""
+        msg = self.mav.recv_match(type="HEARTBEAT", blocking=False)
+        if msg is None or msg.get_srcSystem() != self.mav.target_system:
+            return None
+        return bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+
+
     def set_ardupilot_parameter(self, parameter_name: str, parameter_value: float) -> bool:
         """Send a PARAM_SET message and confirm the ACK."""
         for attempt in range(1, self.config.max_retries + 1):

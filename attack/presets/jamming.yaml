@@ -1,15 +1,11 @@
-type: "drift"
+type: "jamming"
 
 canberra:
-  drift_rate_lat: 0
-  drift_rate_lon: 0.03
   activation_alt: 614.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 
 ornl:
-  drift_rate_lat: 0.05
-  drift_rate_lon: 0
   activation_alt: 25.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 5

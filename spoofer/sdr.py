@@ -1,4 +1,5 @@
 from attack.gps_attack import GpsAttack
+from attack.jamming_attack import JammingAttack
 from communication.sitl_connection import SitlConnection
 from drone.gps_receiver import GpsReceiver
 from spoofer.sdr_config import SdrConfig
@@ -19,18 +20,48 @@ class SoftwareDefinedRadio:
         start_time = time.monotonic()
         elapsed_seconds = 0.0
         interval_seconds = 1.0 / self.config.gps_input_rate_hz
+        saw_armed = False
 
         while elapsed_seconds < self.config.attack_duration_seconds:
             elapsed_seconds = time.monotonic() - start_time
+            armed = connection.poll_armed()
+            if armed is True:
+                saw_armed = True
+            elif armed is False and saw_armed:
+                print("Flight finished (disarmed).")
+                break
             gps_receiver.sync_position_and_velocity_to_sitl(connection)
-            spoofed_position = self.attack.compute_spoofed_position(gps_receiver, elapsed_seconds)
-            spoofed_velocity = self.attack.compute_spoofed_velocity(gps_receiver, elapsed_seconds)
-            self.send_gps_input(gps_receiver, spoofed_position, spoofed_velocity, connection)
+            if not self.attack.check_activation_altitude(gps_receiver, elapsed_seconds):
+                self.send_gps_input(
+                    gps_receiver,
+                    gps_receiver.get_position(),
+                    gps_receiver.get_velocity(),
+                    connection,
+                )
+            elif isinstance(self.attack, JammingAttack):
+                self.jam(connection)
+            else:
+                spoofed_position = self.attack.compute_spoofed_position(
+                    gps_receiver, elapsed_seconds
+                )
+                spoofed_velocity = self.attack.compute_spoofed_velocity(
+                    gps_receiver, elapsed_seconds
+                )
+                self.send_gps_input(
+                    gps_receiver, spoofed_position, spoofed_velocity, connection
+                )
             time.sleep(interval_seconds)
 
             # NOTE: time.sleep accumulates drift over time because it doesn't account for how long
             # send_gps_input took, and should be modified for future tests
     
+
+    def jam(self, connection: SitlConnection) -> None:
+        """Pretend to jam the drone by withholding GPS_INPUT from ArduPilot.
+
+        Counterpart to send_gps_input(). This simulation has no RF layer;
+        stopping the GPS_INPUT stream is how the MAV GPS backend loses lock.
+        """
 
     def send_gps_input(self,
         gps_receiver: GpsReceiver,
@@ -39,7 +70,7 @@ class SoftwareDefinedRadio:
         connection: SitlConnection
     ) -> None:
         """Send a single spoofed GPS_INPUT message using the spoofed position and velocity
-        calculated from the GpsAttack call in `activate_gps_attack()`"""
+        calculated from the SpoofingAttack call in `activate_gps_attack()`"""
         spoofed_lat, spoofed_lon, spoofed_alt = spoofed_position
         spoofed_velocity_north, spoofed_velocity_east, spoofed_velocity_down = spoofed_velocity
 
