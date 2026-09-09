@@ -1,7 +1,7 @@
-from attack.gps_attack import GpsAttack
+from attack.spoofing_attack import SpoofingAttack
 from drone.gps_receiver import GpsReceiver
 
-class DriftAttack(GpsAttack):
+class DriftAttack(SpoofingAttack):
     ATTACK_TYPE = "drift"
 
     def __init__(self, attack_type: str, spawn_location: str):

@@ -1,5 +1,5 @@
-from attack.gps_attack import GpsAttack
+from attack.spoofing_attack import SpoofingAttack
 
-class ReplayAttack(GpsAttack):
+class ReplayAttack(SpoofingAttack):
     ATTACK_TYPE = "replay"
     pass # will be implemented later

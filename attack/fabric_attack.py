@@ -1,6 +1,6 @@
-from attack.gps_attack import GpsAttack
+from attack.spoofing_attack import SpoofingAttack
 
-class FabricAttack(GpsAttack):
+class FabricAttack(SpoofingAttack):
     # this is an abstract class that you should NOT call
 
     def __init__(self, attack_type: str, spawn_location: str):

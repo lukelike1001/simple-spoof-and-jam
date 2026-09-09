@@ -1,7 +1,7 @@
-from attack.gps_attack import GpsAttack
+from attack.spoofing_attack import SpoofingAttack
 from drone.gps_receiver import GpsReceiver
 
-class PassthroughAttack(GpsAttack):
+class PassthroughAttack(SpoofingAttack):
     ATTACK_TYPE = "passthrough"
 
     def __init__(self, attack_type: str, spawn_location: str):

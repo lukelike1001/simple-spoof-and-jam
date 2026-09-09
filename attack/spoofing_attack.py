@@ -7,7 +7,7 @@ import yaml
 
 PRESET_DIR = Path(__file__).parent / "presets"
 
-class GpsAttack(ABC):
+class SpoofingAttack(ABC):
     """Abstract GPS spoofing attack class intended for extension"""
     config = None
 
