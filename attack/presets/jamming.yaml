@@ -1,7 +1,7 @@
 type: "jamming"
 
 canberra:
-  activation_alt: 614.0
+  activation_alt: 30.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 

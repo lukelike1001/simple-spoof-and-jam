@@ -1,8 +1,10 @@
-from communication.sitl_connection import SitlConnection
+import math
+import time
 from pathlib import Path
+
 import yaml
 
-import sys
+from communication.sitl_connection import SitlConnection
 
 GPS_RECEIVER_CONFIG_PATH = Path(__file__).parent / "configs" / "gps_receiver_params.yaml"
 
@@ -24,8 +26,13 @@ class GpsReceiver:
     def __init__(self, config_path: Path = GPS_RECEIVER_CONFIG_PATH):
         """Initialization the normalization constants and the initial position/velocity"""
         self._from_yaml(config_path)
-        # NOTE: insert another line that polls for the initial position and velocity
-        pass
+        self.relative_alt = 0.0
+        self.truth_lat = None
+        self.truth_lon = None
+        self.truth_velocity_north = None
+        self.truth_velocity_east = None
+        self.truth_velocity_down = None
+        self._truth_time = None
 
 
     def _from_yaml(self, config_path: Path) -> None:
@@ -78,23 +85,36 @@ class GpsReceiver:
     
     
     def sync_position_and_velocity_to_sitl(self, connection: SitlConnection):
-        """Poll for a fresh GLOBAL_POSITION_INT to update the drone's position and velocity"""
-        msg = connection.mav.recv_match(type="GLOBAL_POSITION_INT", blocking=False)
-        
-        if msg is None:
-            return None
-        
-        # IMPORTANT: Don't remove this "Null Island" fix.
-        if msg.lat == 0 and msg.lon == 0:
+        """Update from the last drained GLOBAL_POSITION_INT and SITL SIMSTATE."""
+        msg = connection.last_message("GLOBAL_POSITION_INT")
+        if msg is not None and not (msg.lat == 0 and msg.lon == 0):
+            # IMPORTANT: Don't remove this "Null Island" fix.
             # "Null Island": the EKF hasn't ingested a GPS fix yet and has
             # no origin set, so GLOBAL_POSITION_INT reports (0, 0).
-            return None
+            norm_lat, norm_lon, norm_alt = self.normalize_position(msg.lat, msg.lon, msg.alt)
+            norm_vx, norm_vy, norm_vz = self.normalize_velocity(msg.vx, msg.vy, msg.vz)
+            self.update_position(norm_lat, norm_lon, norm_alt)
+            self.update_velocity(norm_vx, norm_vy, norm_vz)
+            self.relative_alt = msg.relative_alt / self.norms["alt_factor"]
 
-        norm_lat, norm_lon, norm_alt = self.normalize_position(msg.lat, msg.lon, msg.alt)
-        norm_vx, norm_vy, norm_vz = self.normalize_velocity(msg.vx, msg.vy, msg.vz)
-        
-        self.update_position(norm_lat, norm_lon, norm_alt)
-        self.update_velocity(norm_vx, norm_vy, norm_vz)
+        sim = connection.last_message("SIMSTATE")
+        if sim is not None and getattr(sim, "lat", 0) != 0:
+            lat = sim.lat / self.norms["lat_factor"]
+            lon = sim.lng / self.norms["lon_factor"]
+            now = time.monotonic()
+            if self._truth_time is not None and now > self._truth_time:
+                dt = now - self._truth_time
+                self.truth_velocity_north = (lat - self.truth_lat) * 111_320.0 / dt
+                self.truth_velocity_east = (
+                    (lon - self.truth_lon)
+                    * 111_320.0
+                    * math.cos(math.radians(lat))
+                    / dt
+                )
+                self.truth_velocity_down = 0.0
+            self.truth_lat = lat
+            self.truth_lon = lon
+            self._truth_time = now
     
 
     def get_signal_quality_params(self):

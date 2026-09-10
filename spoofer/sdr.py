@@ -24,6 +24,7 @@ class SoftwareDefinedRadio:
 
         while elapsed_seconds < self.config.attack_duration_seconds:
             elapsed_seconds = time.monotonic() - start_time
+            connection.drain()
             armed = connection.poll_armed()
             if armed is True:
                 saw_armed = True

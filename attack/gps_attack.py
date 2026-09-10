@@ -36,7 +36,9 @@ class GpsAttack:
         if not self.config or "activation_alt" not in self.config:
             return True
 
-        _, _, alt = gps_receiver.get_position()
+        alt = getattr(gps_receiver, "relative_alt", None)
+        if not isinstance(alt, (int, float)):
+            _, _, alt = gps_receiver.get_position()
         tolerance = self.config.get("activation_alt_tolerance", 1.0)
         delay = self.config.get("activation_delay_seconds", 0.0)
 

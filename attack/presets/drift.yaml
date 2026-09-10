@@ -1,15 +1,16 @@
 type: "drift"
 
 canberra:
-  drift_rate_lat: 0
-  drift_rate_lon: 0.03
-  activation_alt: 614.0
+  drift_rate_north: 0.08
+  drift_rate_east: 0.12
+  activation_alt: 30.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 
 ornl:
-  drift_rate_lat: 0.05
-  drift_rate_lon: 0
+  drift_rate_north: 0.02
+  drift_rate_east: 0.06
   activation_alt: 25.0
   activation_alt_tolerance: 1.0
-  activation_delay_seconds: 5
+  activation_delay_seconds: 20
+

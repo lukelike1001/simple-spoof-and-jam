@@ -10,12 +10,12 @@ Toolbox for developing GPS spoofing attacks using ArduPilot SITL. The Python-bas
 gps-attack/
 ├── attack/
 │   ├── presets/                Per-attack, per-location YAML configs
-│   ├── gps_attack.py           Abstract base class for all attack types
+│   ├── gps_attack.py           Shared YAML + altitude activation
+│   ├── spoofing_attack.py      Abstract spoofing (position/velocity)
 │   ├── passthrough_attack.py   No spoofing; passes real position through
-│   ├── static_attack.py        Holds drone at a fixed fabricated coordinate
+│   ├── fabric_attack.py        Jump to a fixed fabricated coordinate
 │   ├── drift_attack.py         Gradually shifts position at a configured rate
-│   ├── dynamic_attack.py       Activates spoof after reaching a target altitude
-│   ├── fabric_attack.py        Shared base for attacks that use a fixed fabric coordinate
+│   ├── jamming_attack.py       Withhold GPS_INPUT after activation
 │   └── replay_attack.py        (WIP)
 ├── communication/
 │   ├── sitl_connection.py      MAVLink connection + ArduPilot parameter management
@@ -44,6 +44,7 @@ gps-attack/
 │   ├── communication/          Unit tests for SitlConnection
 │   └── drone/                  Unit tests for GpsReceiver
 ├── logs/                       ArduPilot .bin DataFlash logs
+├── run_simulation.sh           Quickstart: SITL + attack + timestamped log save
 ├── pyproject.toml
 └── requirements.txt
 ```
@@ -133,10 +134,10 @@ fi
 
 ```bash
 ./run_simulation.sh --attack-type passthrough --spawn-location ornl
-./run_simulation.sh --attack-type dynamic --spawn-location canberra
+./run_simulation.sh --attack-type fabric --spawn-location canberra
 ```
 
-Run the script, then open QGroundControl with the matching `.plan` file. Then, arm the flight and start the mission to run the selected mission. You are also highly encouraged to read the detailed wakthrough in the next section to better understand how the repo works.
+Run the script, then open QGroundControl with the matching `.plan` file. Then, arm the flight and start the mission to run the selected mission. You are also highly encouraged to read the detailed walkthrough in the next section to better understand how the repo works.
 
 ---
 
@@ -148,9 +149,11 @@ This section describes how to use `run_simulation.py` rather than the quickstart
 
 Open a dedicated terminal in the repo root. `sim_vehicle.py` is an executable installed on your PATH by the prereqs script. **Do not prefix it with `python`.** SITL binds two MAVLink outputs: UDP 14550 for QGroundControl, UDP 14551 for the Python scripts.
 
+Spawn altitude is **0 m MSL** from `plans/spawn_point_lookup.yaml`; cruise altitude is **25 m AGL** in `plans/ornl.plan`. The start timestamp is recorded automatically when you run `run_simulation.py` in Step 2.
+
 ```bash
 sim_vehicle.py -v ArduCopter \
-    --custom-location=35.93051398,-84.31067453,50,0 \
+    --custom-location=35.93051398,-84.31067453,0,0 \
     --out udp:127.0.0.1:14550 \
     --out udp:127.0.0.1:14551
 ```
@@ -170,7 +173,7 @@ In a different terminal (Terminal 2):
 python3 simulation/run_simulation.py --attack-type passthrough --spawn-location ornl
 ```
 
-This script starts the GPS attack simulation, with a specified attack type and a spawn location.
+This script starts the GPS attack simulation, with a specified attack type and a spawn location. Leave this terminal running: when the vehicle disarms after landing, it copies the DataFlash log to `logs/passthrough_ornl_<start>_<end>.bin`.
 
 ### Step 3: Open QGroundControl
 
@@ -200,22 +203,12 @@ In QGroundControl **Fly** view, hold the **Start Mission** slider-arm button.
 
 ![ORNL Arm and Fly](icons/ornl_arm_and_fly.png)
 
-**Expected:** drone takes off to 50m, flies to all waypoints, then RTLs home. No fence breach alert fires.
+**Expected:** drone takes off to 25 m, flies to all waypoints, then RTLs home. No fence breach alert fires.
 
-### Step 6: Retrieve the .bin log
-
-Wait for the flight to finish in QGroundControl.
+When it lands and disarms, Terminal 2 should print `Flight finished (disarmed).` and `Saved flight log: logs/passthrough_ornl_<start>_<end>.bin`. Then Ctrl+C the `sim_vehicle.py` terminal.
 
 ![ORNL Finished Flight](icons/ornl_finished_flight.png)
 
-ArduPilot SITL writes `.bin` DataFlash logs to the `logs/` subdirectory of wherever `sim_vehicle.py` was launched. After landing:
-
-```bash
-mkdir -p logs/ornl
-ls -lt logs/*.BIN | head -3
-cp $(ls -t logs/*.BIN | head -1) logs/ornl/baseline_flight.bin
-```
-
-AUTO-01 is complete when `logs/ornl/baseline_flight.bin` exists and the QGroundControl map shows a clean rectangular path with no geofence breach.
+AUTO-01 is complete when that timestamped `.bin` exists and the QGroundControl map shows a clean rectangular path with no geofence breach.
 
 ---

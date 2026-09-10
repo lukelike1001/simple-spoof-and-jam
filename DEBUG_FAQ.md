@@ -46,7 +46,7 @@ Take the following ArduPilot script as an example:
 
 ```bash
 sim_vehicle.py -v ArduCopter \
-    --custom-location=35.93051398,-84.31067453,50,0 \
+    --custom-location=35.93051398,-84.31067453,0,0 \
     --out udp:127.0.0.1:14550 \
     --out udp:127.0.0.1:14551
 ```
@@ -54,7 +54,7 @@ sim_vehicle.py -v ArduCopter \
 Let's break down how the `custom-location` structure works.
 
 ```
---custom-location=35.93051398,-84.31067453, 50,     0
+--custom-location=35.93051398,-84.31067453, 0,     0
                   └────┬─────┘└─────┬──────┘└┬┘  └──┬──┘
                    latitude    longitude    alt  heading
 
@@ -66,7 +66,7 @@ Let's break down how the `custom-location` structure works.
 4. **Heading:** degrees, compass heading the vehicle faces at spawn (0 = North)
 
 
-Therefore, in this example, the Oak Ridge National Lab coordinates are (35.93°N, -84.31°W), with an altitude set to 50m and a heading of 0°.
+Therefore, in this example, the Oak Ridge National Lab coordinates are (35.93°N, -84.31°W), with a spawn altitude of 0 m MSL and a heading of 0°. Cruise altitude is set in `plans/ornl.plan` (25 m AGL), not in `--custom-location`.
 
 # ORNL baseline flight is "Not Ready"
 

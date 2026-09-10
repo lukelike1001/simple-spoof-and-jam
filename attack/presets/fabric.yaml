@@ -4,7 +4,7 @@ canberra:
   fabric_lat: -35.263261
   fabric_lon: 149.26523
   fabric_alt: 614.0
-  activation_alt: 614.0
+  activation_alt: 30.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 

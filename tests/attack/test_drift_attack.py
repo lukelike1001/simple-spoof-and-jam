@@ -1,7 +1,9 @@
+import math
+
 import pytest
 from unittest.mock import MagicMock
 
-from attack.drift_attack import DriftAttack
+from attack.drift_attack import METRES_PER_DEG_LAT, DriftAttack
 
 
 @pytest.fixture
@@ -25,13 +27,25 @@ class TestDriftAttack:
         with pytest.raises(KeyError):
             DriftAttack("drift", "paris")
 
-    def test_compute_spoofed_position_applies_drift_rates(self, drift_attack, receiver):
+    def test_compute_spoofed_position_applies_metre_drift_rates(self, drift_attack, receiver):
         elapsed = 10.0
         lat, lon, alt = drift_attack.compute_spoofed_position(receiver, elapsed)
-        assert lat == pytest.approx(receiver.lat + drift_attack.drift_rate_lat * elapsed)
-        assert lon == pytest.approx(receiver.lon + drift_attack.drift_rate_lon * elapsed)
+        dlat = drift_attack.drift_rate_north * elapsed / METRES_PER_DEG_LAT
+        dlon = drift_attack.drift_rate_east * elapsed / (
+            METRES_PER_DEG_LAT * math.cos(math.radians(receiver.lat))
+        )
+        assert lat == pytest.approx(receiver.lat + dlat)
+        assert lon == pytest.approx(receiver.lon + dlon)
         assert alt == receiver.alt
+        north_m = (lat - receiver.lat) * METRES_PER_DEG_LAT
+        east_m = (lon - receiver.lon) * METRES_PER_DEG_LAT * math.cos(
+            math.radians(receiver.lat)
+        )
+        assert north_m == pytest.approx(drift_attack.drift_rate_north * elapsed)
+        assert east_m == pytest.approx(drift_attack.drift_rate_east * elapsed)
 
-    def test_compute_spoofed_velocity_returns_receiver_velocity_unchanged(self, drift_attack, receiver):
-        result = drift_attack.compute_spoofed_velocity(receiver, elapsed_seconds=10.0)
-        assert result == receiver.get_velocity()
+    def test_compute_spoofed_velocity_adds_drift_rates(self, drift_attack, receiver):
+        vn, ve, vd = drift_attack.compute_spoofed_velocity(receiver, elapsed_seconds=10.0)
+        assert vn == pytest.approx(1.0 + drift_attack.drift_rate_north)
+        assert ve == pytest.approx(2.0 + drift_attack.drift_rate_east)
+        assert vd == pytest.approx(-0.5)

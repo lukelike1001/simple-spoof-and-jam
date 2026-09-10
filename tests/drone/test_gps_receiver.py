@@ -54,21 +54,25 @@ class TestGpsReceiver:
         msg.lat = 359305000
         msg.lon = -843107000
         msg.alt = 50000
+        msg.relative_alt = 50000
         msg.vx = 100
         msg.vy = 200
         msg.vz = -50
         connection = MagicMock()
-        connection.mav.recv_match.return_value = msg
+        connection.last_message.side_effect = (
+            lambda name: msg if name == "GLOBAL_POSITION_INT" else None
+        )
 
         receiver.sync_position_and_velocity_to_sitl(connection)
 
         assert receiver.get_position() == pytest.approx((35.9305, -84.3107, 50.0))
         assert receiver.get_velocity() == pytest.approx((1.0, 2.0, -0.5))
+        assert receiver.relative_alt == pytest.approx(50.0)
 
-    def test_sync_returns_none_when_no_message_is_ready(self, receiver):
+    def test_sync_leaves_state_when_no_message_is_ready(self, receiver):
         connection = MagicMock()
-        connection.mav.recv_match.return_value = None
+        connection.last_message.return_value = None
 
-        result = receiver.sync_position_and_velocity_to_sitl(connection)
+        receiver.sync_position_and_velocity_to_sitl(connection)
 
-        assert result is None
+        assert receiver.get_position() == pytest.approx((35.9305, -84.3107, 50.0))

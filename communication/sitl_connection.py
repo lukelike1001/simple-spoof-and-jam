@@ -20,6 +20,7 @@ class SitlConnection:
         """Initialise with injected configuration; does not connect immediately."""
         self.config = config
         self._mav = None
+        self._vehicle_heartbeat = None
 
 
     def connect(self) -> None:
@@ -40,6 +41,8 @@ class SitlConnection:
             f"  system {self._mav.target_system} "
             f"component {self._mav.target_component} online"
         )
+        self._vehicle_heartbeat = None
+        self._request_message_intervals()
 
 
     def reboot(self) -> None:
@@ -92,12 +95,46 @@ class SitlConnection:
         return self._mav
 
 
+    def drain(self) -> None:
+        """Read all pending MAVLink messages into mav.messages (no discarding)."""
+        while True:
+            msg = self.mav.recv_msg()
+            if msg is None:
+                break
+            if (
+                msg.get_type() == "HEARTBEAT"
+                and msg.get_srcSystem() == self.mav.target_system
+            ):
+                self._vehicle_heartbeat = msg
+
+    def last_message(self, type_name: str):
+        """Return the most recent drained message of this type, or None."""
+        return self.mav.messages.get(type_name)
+
     def poll_armed(self) -> bool | None:
-        """Non-blocking: True/False if a vehicle HEARTBEAT arrived, else None."""
-        msg = self.mav.recv_match(type="HEARTBEAT", blocking=False)
-        if msg is None or msg.get_srcSystem() != self.mav.target_system:
+        """Armed state from the last drained vehicle HEARTBEAT, or None."""
+        msg = self._vehicle_heartbeat
+        if msg is None:
             return None
         return bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+
+    def _request_message_intervals(self) -> None:
+        """Ask SITL for 10 Hz position/truth so the attack loop is not starved."""
+        interval_us = 100_000
+        for msg_id in (
+            mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT,
+            mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT,
+            mavutil.mavlink.MAVLINK_MSG_ID_SIMSTATE,
+        ):
+            self.mav.mav.command_long_send(
+                self.mav.target_system,
+                self.mav.target_component,
+                mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,
+                0,
+                msg_id,
+                interval_us,
+                0, 0, 0, 0, 0,
+            )
 
 
     def set_ardupilot_parameter(self, parameter_name: str, parameter_value: float) -> bool:
