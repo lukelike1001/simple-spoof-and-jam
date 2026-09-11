@@ -1,7 +1,7 @@
-"""Plot GPS log asymmetry between a drift-spoofing run and a jamming run.
+"""Plot GPS log asymmetry: a spoofed track vs a jamming health drop.
 
-Reads ArduPilot DataFlash .bin logs and writes a two-panel figure. No display.
-Plotted fields: GPS.Lat, GPS.Lng (as local East/North metres) and GPS.Status.
+Reads two ArduPilot DataFlash .bin logs and writes a two-panel figure. No display.
+Fields: GPS.Lat, GPS.Lng (local East/North metres) and GPS.Status.
 """
 from __future__ import annotations
 
@@ -43,29 +43,37 @@ def read_gps(bin_path: Path) -> dict[str, np.ndarray]:
         raise ValueError(f"No GPS messages in {bin_path}")
 
     time_us, lat, lon, status = (np.array(col) for col in zip(*rows))
-    t_s = (time_us - time_us[0]) / 1e6
-    return {"t_s": t_s, "lat": lat, "lon": lon, "status": status}
+    return {
+        "t_s": (time_us - time_us[0]) / 1e6,
+        "lat": lat,
+        "lon": lon,
+        "status": status,
+    }
 
 
 def latlon_to_local_metres(
     lat: np.ndarray, lon: np.ndarray, origin_lat: float, origin_lon: float
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Convert WGS-84 lat/lon to East/North metres relative to origin."""
     north = (lat - origin_lat) * METRES_PER_DEG_LAT
     east = (lon - origin_lon) * METRES_PER_DEG_LAT * math.cos(math.radians(origin_lat))
     return east, north
 
 
 def valid_fix_mask(lat: np.ndarray, lon: np.ndarray, status: np.ndarray) -> np.ndarray:
-    """True where GPS reports a 3D-or-better fix that is not Null Island."""
     return (status >= GPS_OK_FIX_3D) & ~((lat == 0.0) & (lon == 0.0))
 
 
-def _origin(lat: np.ndarray, lon: np.ndarray, status: np.ndarray) -> tuple[float, float]:
-    mask = valid_fix_mask(lat, lon, status)
-    if not np.any(mask):
-        return float(lat[0]), float(lon[0])
-    return float(lat[mask][0]), float(lon[mask][0])
+def as_local(
+    gps: dict[str, np.ndarray],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """East/North metres and a 3D-fix mask, origin = first valid fix."""
+    mask = valid_fix_mask(gps["lat"], gps["lon"], gps["status"])
+    if np.any(mask):
+        origin_lat, origin_lon = float(gps["lat"][mask][0]), float(gps["lon"][mask][0])
+    else:
+        origin_lat, origin_lon = float(gps["lat"][0]), float(gps["lon"][0])
+    east, north = latlon_to_local_metres(gps["lat"], gps["lon"], origin_lat, origin_lon)
+    return east, north, mask
 
 
 def _apply_style() -> None:
@@ -102,23 +110,15 @@ def _plot_colored_track(ax: plt.Axes, east: np.ndarray, north: np.ndarray, t_s: 
 
 
 def plot_asymmetry(
-    drift: dict[str, np.ndarray],
-    jamming: dict[str, np.ndarray],
+    left: dict[str, np.ndarray],
+    right: dict[str, np.ndarray],
     output_path: Path,
+    left_title: str = "Spoofing",
+    right_title: str = "Jamming",
 ) -> None:
     _apply_style()
-
-    drift_origin = _origin(drift["lat"], drift["lon"], drift["status"])
-    jam_origin = _origin(jamming["lat"], jamming["lon"], jamming["status"])
-    drift_east, drift_north = latlon_to_local_metres(
-        drift["lat"], drift["lon"], *drift_origin
-    )
-    jam_east, jam_north = latlon_to_local_metres(
-        jamming["lat"], jamming["lon"], *jam_origin
-    )
-    jam_valid = valid_fix_mask(jamming["lat"], jamming["lon"], jamming["status"])
-    jam_east_plot = np.where(jam_valid, jam_east, np.nan)
-    jam_north_plot = np.where(jam_valid, jam_north, np.nan)
+    left_east, left_north, _ = as_local(left)
+    right_east, right_north, right_ok = as_local(right)
 
     fig = plt.figure(figsize=(10.0, 4.2))
     grid = fig.add_gridspec(
@@ -129,26 +129,30 @@ def plot_asymmetry(
     ax_pos = fig.add_subplot(grid[0, 1])
     ax_status = fig.add_subplot(grid[1, 1], sharex=ax_pos)
 
-    lines = _plot_colored_track(ax_track, drift_east, drift_north, drift["t_s"])
+    lines = _plot_colored_track(ax_track, left_east, left_north, left["t_s"])
     ax_track.set_aspect("equal", adjustable="datalim")
     ax_track.autoscale()
     ax_track.set_xlabel("East (m)")
     ax_track.set_ylabel("North (m)")
-    ax_track.set_title("Drift spoofing")
+    ax_track.set_title(left_title)
     ax_track.legend(loc="upper left", frameon=False)
     cbar = fig.colorbar(lines, ax=ax_track, fraction=0.046, pad=0.04)
     cbar.set_label("Time (s)")
 
-    ax_pos.plot(jamming["t_s"], jam_east_plot, color="#2166ac", lw=1.4, label="East")
-    ax_pos.plot(jamming["t_s"], jam_north_plot, color="#4daf4a", lw=1.4, label="North")
+    ax_pos.plot(
+        right["t_s"], np.where(right_ok, right_east, np.nan),
+        color="#2166ac", lw=1.4, label="East",
+    )
+    ax_pos.plot(
+        right["t_s"], np.where(right_ok, right_north, np.nan),
+        color="#4daf4a", lw=1.4, label="North",
+    )
     ax_pos.set_ylabel("Position (m)")
-    ax_pos.set_title("Jamming")
+    ax_pos.set_title(right_title)
     ax_pos.legend(loc="upper right", frameon=False, ncol=2)
     ax_pos.tick_params(labelbottom=False)
 
-    ax_status.step(
-        jamming["t_s"], jamming["status"], where="post", color="#b2182b", lw=1.6
-    )
+    ax_status.step(right["t_s"], right["status"], where="post", color="#b2182b", lw=1.6)
     ax_status.set_yticks(STATUS_TICKS)
     ax_status.set_yticklabels(STATUS_LABELS)
     ax_status.set_ylim(-0.4, 6.6)
@@ -162,35 +166,31 @@ def plot_asymmetry(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Plot GPS position vs health from drift-spoofing and jamming DataFlash logs"
+        description="Plot a spoofing GPS track next to a jamming GPS.Status drop"
     )
+    parser.add_argument("left_log", type=Path, help="Spoofing (or other) DataFlash .bin")
+    parser.add_argument("right_log", type=Path, help="Jamming (or other) DataFlash .bin")
     parser.add_argument(
-        "--drift-log",
-        type=Path,
-        default=Path("logs/drift_ornl.bin"),
-        help="DataFlash .bin from a drift spoofing run",
-    )
-    parser.add_argument(
-        "--jamming-log",
-        type=Path,
-        default=Path("logs/jamming_ornl.bin"),
-        help="DataFlash .bin from a jamming run",
-    )
-    parser.add_argument(
-        "--output",
+        "-o", "--output",
         type=Path,
         default=Path("logs/attack_asymmetry.pdf"),
         help="Output figure path (.pdf or .png)",
     )
+    parser.add_argument("--left-title", default="Spoofing")
+    parser.add_argument("--right-title", default="Jamming")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     try:
-        drift = read_gps(args.drift_log)
-        jamming = read_gps(args.jamming_log)
-        plot_asymmetry(drift, jamming, args.output)
+        plot_asymmetry(
+            read_gps(args.left_log),
+            read_gps(args.right_log),
+            args.output,
+            left_title=args.left_title,
+            right_title=args.right_title,
+        )
     except (FileNotFoundError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
