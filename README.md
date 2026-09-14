@@ -1,4 +1,4 @@
-# gps-attack
+# simple-spoof-and-jam
 
 Toolbox for developing GPS spoofing attacks using ArduPilot SITL. The Python-based SDR injects fake GPS coordinates via MAVLink `GPS_INPUT` messages to trigger geofence breaches.
 
@@ -7,7 +7,7 @@ Toolbox for developing GPS spoofing attacks using ArduPilot SITL. The Python-bas
 ## Repository layout
 
 ```
-gps-attack/
+simple-spoof-and-jam/
 ├── attack/
 │   ├── presets/                Per-attack, per-location YAML configs
 │   ├── gps_attack.py           Shared YAML + altitude activation
@@ -69,7 +69,7 @@ Tools/environment_install/install-prereqs-ubuntu.sh -y
 
 ```bash
 cat > ~/.ardupilot_profile << 'EOF'
-# ArduPilot SITL tooling for gps-attack local development.
+# ArduPilot SITL tooling for simple-spoof-and-jam local development.
 # sim_vehicle.py lives in the clone; mavproxy.py is pip-installed to ~/.local/bin.
 export PATH="$HOME/ardupilot/Tools/autotest:$HOME/.local/bin:$PATH"
 EOF
@@ -114,7 +114,7 @@ After opening QGroundControl and verifying that the GUI loads, you can close it 
 
 ### Removing the local setup
 
-If you no longer need to use or prototype with the `gps-attack` repo, you can remove the local setup by following these instructions.
+If you no longer need to use or prototype with the `simple-spoof-and-jam` repo, you can remove the local setup by following these instructions.
 
 ```bash
 rm ~/.ardupilot_profile
