@@ -11,11 +11,13 @@ simple-spoof-and-jam/
 ├── attack/
 │   ├── presets/                Per-attack, per-location YAML configs
 │   ├── gps_attack.py           Shared YAML + altitude activation
-│   ├── spoofing_attack.py      Abstract spoofing (position/velocity)
+│   ├── spoofing_attack.py      Spoofing base: manipulates navigation content
 │   ├── passthrough_attack.py   No spoofing; passes real position through
 │   ├── fabric_attack.py        Jump to a fixed fabricated coordinate
 │   ├── drift_attack.py         Gradually shifts position at a configured rate
-│   ├── jamming_attack.py       Withhold GPS_INPUT after activation
+│   ├── jamming_attack.py       Jamming base: manipulates quality/availability
+│   ├── complete_loss_attack.py Withhold GPS_INPUT after activation (returns None)
+│   ├── degradation_attack.py   Ramp GPS quality down while keeping content authentic
 │   └── replay_attack.py        (WIP)
 ├── communication/
 │   ├── sitl_connection.py      MAVLink connection + ArduPilot parameter management
@@ -25,7 +27,8 @@ simple-spoof-and-jam/
 │   ├── configs/
 │   │   └── gps_receiver_params.yaml   Signal quality + normalization constants
 │   ├── drone.py                Composes GPS receiver, IMU, compass, and clock
-│   ├── gps_receiver.py         Stores position/velocity; syncs from GLOBAL_POSITION_INT
+│   ├── gps_receiver.py         Stores position/velocity; builds nominal GpsInputState
+│   ├── gps_input_state.py      Effect-level GPS state passed to/from attacks
 │   ├── imu.py
 │   ├── compass.py
 │   └── clock.py

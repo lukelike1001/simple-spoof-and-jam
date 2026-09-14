@@ -2,7 +2,7 @@ from contextlib import ExitStack
 from dataclasses import replace
 from unittest.mock import MagicMock, patch
 
-from attack.jamming_attack import JammingAttack
+from attack.complete_loss_attack import CompleteLossAttack
 from drone.gps_input_state import GpsInputState
 from spoofer.sdr import SoftwareDefinedRadio
 
@@ -18,7 +18,7 @@ def _nominal():
 def _run_loop(activation: bool):
     """Run the injection loop once with activation forced on/off; return the
     patched send_gps_input mock."""
-    attack = JammingAttack("jamming", "ornl")
+    attack = CompleteLossAttack("complete_loss", "ornl")
     sdr = SoftwareDefinedRadio(attack)
     sdr.config = replace(sdr.config, attack_duration_seconds=0.5)
     clock = {"t": 0.0}
@@ -39,10 +39,10 @@ def _run_loop(activation: bool):
     return send_gps_input
 
 
-class TestJammingAttack:
+class TestCompleteLossAttack:
 
     def test_apply_returns_none(self):
-        attack = JammingAttack("jamming", "ornl")
+        attack = CompleteLossAttack("complete_loss", "ornl")
         assert attack.apply(_nominal(), MagicMock(), elapsed_seconds=10.0) is None
 
     def test_no_gps_input_sent_when_activation_has_fired(self):

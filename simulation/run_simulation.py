@@ -28,7 +28,8 @@ class GpsSpoofingSimulation:
 
     def _instantiate_attack(self, attack_type: str, spawn_location: str):
         module = importlib.import_module(f"attack.{attack_type}_attack")
-        cls = getattr(module, f"{attack_type.capitalize()}Attack")
+        class_name = "".join(part.capitalize() for part in attack_type.split("_")) + "Attack"
+        cls = getattr(module, class_name)
         return cls(attack_type, spawn_location)
 
 
@@ -101,7 +102,7 @@ class GpsSpoofingSimulation:
         )
         parser.add_argument(
             "--attack-type",
-            choices=["passthrough", "fabric", "drift", "jamming"],
+            choices=["passthrough", "fabric", "drift", "complete_loss", "degradation"],
             default="passthrough",
             help="GPS attack type to apply (default: passthrough, no attack)",
         )

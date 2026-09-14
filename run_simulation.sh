@@ -1,9 +1,9 @@
 #!/bin/bash
-# Usage: ./run_simulation.sh --attack-type {passthrough|fabric|drift|jamming} --spawn-location {ornl|canberra}
+# Usage: ./run_simulation.sh --attack-type {passthrough|fabric|drift|complete_loss|degradation} --spawn-location {ornl|canberra}
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 --attack-type {passthrough|fabric|drift|jamming} --spawn-location {ornl|canberra}" >&2
+    echo "Usage: $0 --attack-type {passthrough|fabric|drift|complete_loss|degradation} --spawn-location {ornl|canberra}" >&2
     exit 1
 }
 
@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$ATTACK_TYPE" in
-    passthrough|fabric|drift|jamming) ;;
+    passthrough|fabric|drift|complete_loss|degradation) ;;
     *) echo "Invalid --attack-type: '$ATTACK_TYPE'" >&2; usage ;;
 esac
 

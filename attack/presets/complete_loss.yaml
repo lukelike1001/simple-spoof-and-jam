@@ -1,4 +1,7 @@
-type: "jamming"
+type: "complete_loss"
+
+# Complete-loss jamming: once activation fires, no GPS_INPUT is delivered.
+# Activation values carried over from the former jamming preset.
 
 canberra:
   activation_alt: 30.0
