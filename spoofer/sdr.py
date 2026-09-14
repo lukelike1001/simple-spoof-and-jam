@@ -1,6 +1,6 @@
 from attack.gps_attack import GpsAttack
-from attack.jamming_attack import JammingAttack
 from communication.sitl_connection import SitlConnection
+from drone.gps_input_state import GpsInputState
 from drone.gps_receiver import GpsReceiver
 from spoofer.sdr_config import SdrConfig
 import time
@@ -32,76 +32,50 @@ class SoftwareDefinedRadio:
                 print("Flight finished (disarmed).")
                 break
             gps_receiver.sync_position_and_velocity_to_sitl(connection)
+
+            nominal = gps_receiver.nominal_gps_state()
             if not self.attack.check_activation_altitude(gps_receiver, elapsed_seconds):
-                self.send_gps_input(
-                    gps_receiver,
-                    gps_receiver.get_position(),
-                    gps_receiver.get_velocity(),
-                    connection,
-                )
-            elif isinstance(self.attack, JammingAttack):
-                self.jam(connection)
+                # Before activation, deliver the authentic state untouched.
+                state = nominal
             else:
-                spoofed_position = self.attack.compute_spoofed_position(
-                    gps_receiver, elapsed_seconds
-                )
-                spoofed_velocity = self.attack.compute_spoofed_velocity(
-                    gps_receiver, elapsed_seconds
-                )
-                self.send_gps_input(
-                    gps_receiver, spoofed_position, spoofed_velocity, connection
-                )
+                state = self.attack.apply(nominal, gps_receiver, elapsed_seconds)
+
+            # A None state means the attack withholds GPS input (jamming).
+            if state is not None:
+                self.send_gps_input(state, connection)
             time.sleep(interval_seconds)
 
             # NOTE: time.sleep accumulates drift over time because it doesn't account for how long
             # send_gps_input took, and should be modified for future tests
     
 
-    def jam(self, connection: SitlConnection) -> None:
-        """Pretend to jam the drone by withholding GPS_INPUT from ArduPilot.
-
-        Counterpart to send_gps_input(). This simulation has no RF layer;
-        stopping the GPS_INPUT stream is how the MAV GPS backend loses lock.
-        """
-
-    def send_gps_input(self,
-        gps_receiver: GpsReceiver,
-        spoofed_position: tuple[float, float, float],
-        spoofed_velocity: tuple[float, float, float],
-        connection: SitlConnection
-    ) -> None:
-        """Send a single spoofed GPS_INPUT message using the spoofed position and velocity
-        calculated from the SpoofingAttack call in `activate_gps_attack()`"""
-        spoofed_lat, spoofed_lon, spoofed_alt = spoofed_position
-        spoofed_velocity_north, spoofed_velocity_east, spoofed_velocity_down = spoofed_velocity
+    def send_gps_input(self, state: GpsInputState, connection: SitlConnection) -> None:
+        """Send a single GPS_INPUT message from the effect-level GpsInputState
+        returned by the attack's apply() call in `activate_gps_attack()`."""
 
         # NOTE: We can make later edits to modify the GPS to support spoofed time
         # in addition to just position and velocity
         seconds_since_gps_epoch = time.time() - self.config.gps_epoch_unix
         gps_week, seconds_into_week = divmod(seconds_since_gps_epoch, self.config.seconds_per_week)
-        signal_quality_params = gps_receiver.get_signal_quality_params()
 
-        # NOTE: I should externalize these random magic values (low priority)
-        # NOTE: In the real world, mav.gps_input_send isn't the most accurate way to simulate them.
-        # In the real world, spoofers use 
         connection.mav.mav.gps_input_send(
             int(time.time() * 1e6),         # time_usec
             0,                              # gps_id
             0,                              # ignore_flags because every field below is valid
             int(seconds_into_week * 1000),  # time_week_ms
             int(gps_week),                  # time_week
-            signal_quality_params["fix_type_3d"],              # fix_type
-            int(spoofed_lat * 1e7),             # lat, degE7
-            int(spoofed_lon * 1e7),             # lon, degE7
-            spoofed_alt,                        # alt, m MSL
-            signal_quality_params["hdop"],
-            signal_quality_params["vdop"],
-            spoofed_velocity_north,
-            spoofed_velocity_east,
-            spoofed_velocity_down,
-            signal_quality_params["speed_accuracy"],
-            signal_quality_params["horizontal_accuracy"],
-            signal_quality_params["vertical_accuracy"],
-            signal_quality_params["satellites_visible_count"],
+            state.fix_type,                 # fix_type
+            int(state.lat * 1e7),           # lat, degE7
+            int(state.lon * 1e7),           # lon, degE7
+            state.alt,                      # alt, m MSL
+            state.hdop,
+            state.vdop,
+            state.vn,
+            state.ve,
+            state.vd,
+            state.speed_accuracy,
+            state.horizontal_accuracy,
+            state.vertical_accuracy,
+            state.satellites_visible,
             0,                          # yaw, 0 = unknown
         )

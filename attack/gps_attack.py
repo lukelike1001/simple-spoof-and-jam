@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import math
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 import yaml
 
+from drone.gps_input_state import GpsInputState
 from drone.gps_receiver import GpsReceiver
 
 PRESET_DIR = Path(__file__).parent / "presets"
 
 
-class GpsAttack:
+class GpsAttack(ABC):
     """Shared YAML loading and altitude-triggered activation for spoofing and jamming."""
 
     config = None
@@ -18,6 +20,19 @@ class GpsAttack:
     def __init__(self, attack_type: str, spawn_location: str):
         self.reached_time = math.inf
         self.activated_at = math.inf
+
+    @abstractmethod
+    def apply(
+        self,
+        nominal: GpsInputState,
+        receiver: GpsReceiver,
+        elapsed_seconds: float,
+    ) -> GpsInputState | None:
+        """Transform the authentic/nominal GPS state into the effect to deliver.
+
+        Returns a ``GpsInputState`` to send as GPS_INPUT, or ``None`` to
+        withhold GPS input entirely (complete-loss jamming).
+        """
 
     def _from_yaml(self, attack_type: str, spawn_location: str) -> None:
         config_path = PRESET_DIR / f"{attack_type}.yaml"

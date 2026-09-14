@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 from communication.sitl_connection import SitlConnection
+from drone.gps_input_state import GpsInputState
 
 GPS_RECEIVER_CONFIG_PATH = Path(__file__).parent / "configs" / "gps_receiver_params.yaml"
 
@@ -116,6 +117,29 @@ class GpsReceiver:
             self.truth_lon = lon
             self._truth_time = now
     
+
+    def nominal_gps_state(self) -> GpsInputState:
+        """Build the authentic/nominal effect-level GPS state from current
+        position, velocity, and the configured signal quality params.
+
+        This is the state an attack receives and may modify or withhold.
+        """
+        q = self.signal_quality_params
+        return GpsInputState(
+            lat=self.lat,
+            lon=self.lon,
+            alt=self.alt,
+            vn=self.velocity_north,
+            ve=self.velocity_east,
+            vd=self.velocity_down,
+            fix_type=q["fix_type_3d"],
+            satellites_visible=q["satellites_visible_count"],
+            hdop=q["hdop"],
+            vdop=q["vdop"],
+            horizontal_accuracy=q["horizontal_accuracy"],
+            vertical_accuracy=q["vertical_accuracy"],
+            speed_accuracy=q["speed_accuracy"],
+        )
 
     def get_signal_quality_params(self):
         """Returns the signal quality params used for sending GPS input messages via MAVLink.

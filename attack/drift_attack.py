@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import math
+from dataclasses import replace
 
 from attack.spoofing_attack import SpoofingAttack
+from drone.gps_input_state import GpsInputState
 from drone.gps_receiver import GpsReceiver
 
 METRES_PER_DEG_LAT = 111_320.0
@@ -15,31 +19,44 @@ class DriftAttack(SpoofingAttack):
         self.drift_rate_north = self.config["drift_rate_north"]
         self.drift_rate_east = self.config["drift_rate_east"]
 
+    def apply(
+        self,
+        nominal: GpsInputState,
+        receiver: GpsReceiver,
+        elapsed_seconds: float,
+    ) -> GpsInputState:
+        """Offset position/velocity by north/east drift accumulated since activation.
 
-    def compute_spoofed_position(
-            self, gps_receiver: GpsReceiver, elapsed_seconds: float
-    ) -> tuple[float, float, float]:
-        """Offset the reported position by north/east metres accumulated since activation."""
+        Uses the SITL truth position/velocity when available so the EKF sees a
+        consistent spoof, falling back to the nominal state otherwise.
+        """
         t = self.seconds_since_activation(elapsed_seconds)
-        lat = gps_receiver.truth_lat if isinstance(gps_receiver.truth_lat, (int, float)) else gps_receiver.lat
-        lon = gps_receiver.truth_lon if isinstance(gps_receiver.truth_lon, (int, float)) else gps_receiver.lon
+        lat = (
+            receiver.truth_lat
+            if isinstance(receiver.truth_lat, (int, float))
+            else nominal.lat
+        )
+        lon = (
+            receiver.truth_lon
+            if isinstance(receiver.truth_lon, (int, float))
+            else nominal.lon
+        )
         north_m = self.drift_rate_north * t
         east_m = self.drift_rate_east * t
         dlat = north_m / METRES_PER_DEG_LAT
         dlon = east_m / (METRES_PER_DEG_LAT * math.cos(math.radians(lat)))
-        return (lat + dlat, lon + dlon, gps_receiver.alt)
 
-    def compute_spoofed_velocity(
-            self, gps_receiver: GpsReceiver, elapsed_seconds: float
-    ) -> tuple[float, float, float]:
-        """Truth NED velocity plus the configured drift rates, so the EKF sees a consistent spoof."""
-        vn, ve, vd = gps_receiver.get_velocity()
-        if isinstance(gps_receiver.truth_velocity_north, (int, float)):
-            vn = gps_receiver.truth_velocity_north
-            ve = gps_receiver.truth_velocity_east
-            vd = gps_receiver.truth_velocity_down or 0.0
-        return (
-            vn + self.drift_rate_north,
-            ve + self.drift_rate_east,
-            vd,
+        vn, ve, vd = nominal.vn, nominal.ve, nominal.vd
+        if isinstance(receiver.truth_velocity_north, (int, float)):
+            vn = receiver.truth_velocity_north
+            ve = receiver.truth_velocity_east
+            vd = receiver.truth_velocity_down or 0.0
+
+        return replace(
+            nominal,
+            lat=lat + dlat,
+            lon=lon + dlon,
+            vn=vn + self.drift_rate_north,
+            ve=ve + self.drift_rate_east,
+            vd=vd,
         )
