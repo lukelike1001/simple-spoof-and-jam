@@ -2,6 +2,15 @@ import pytest
 from unittest.mock import MagicMock
 
 from attack.passthrough_attack import PassthroughAttack
+from drone.gps_input_state import GpsInputState
+
+
+def _nominal():
+    return GpsInputState(
+        lat=35.9305, lon=-84.3107, alt=50.0, vn=1.0, ve=2.0, vd=-0.5,
+        fix_type=3, satellites_visible=12, hdop=1.0, vdop=1.0,
+        horizontal_accuracy=0.5, vertical_accuracy=2.0, speed_accuracy=0.5,
+    )
 
 
 @pytest.fixture
@@ -9,20 +18,8 @@ def passthrough_attack():
     return PassthroughAttack("passthrough", "ornl")
 
 
-@pytest.fixture
-def receiver():
-    r = MagicMock()
-    r.get_position.return_value = (35.9305, -84.3107, 50.0)
-    r.get_velocity.return_value = (1.0, 2.0, -0.5)
-    return r
-
-
 class TestPassthroughAttack:
 
-    def test_compute_spoofed_position_returns_receiver_position_unchanged(self, passthrough_attack, receiver):
-        result = passthrough_attack.compute_spoofed_position(receiver, elapsed_seconds=10.0)
-        assert result == receiver.get_position()
-
-    def test_compute_spoofed_velocity_returns_receiver_velocity_unchanged(self, passthrough_attack, receiver):
-        result = passthrough_attack.compute_spoofed_velocity(receiver, elapsed_seconds=10.0)
-        assert result == receiver.get_velocity()
+    def test_apply_returns_nominal_state_unchanged(self, passthrough_attack):
+        nominal = _nominal()
+        assert passthrough_attack.apply(nominal, MagicMock(), elapsed_seconds=10.0) is nominal

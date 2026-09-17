@@ -1,4 +1,4 @@
-# gps-attack
+# simple-spoof-and-jam
 
 Toolbox for developing GPS spoofing attacks using ArduPilot SITL. The Python-based SDR injects fake GPS coordinates via MAVLink `GPS_INPUT` messages to trigger geofence breaches.
 
@@ -7,15 +7,17 @@ Toolbox for developing GPS spoofing attacks using ArduPilot SITL. The Python-bas
 ## Repository layout
 
 ```
-gps-attack/
+simple-spoof-and-jam/
 ├── attack/
 │   ├── presets/                Per-attack, per-location YAML configs
 │   ├── gps_attack.py           Shared YAML + altitude activation
-│   ├── spoofing_attack.py      Abstract spoofing (position/velocity)
+│   ├── spoofing_attack.py      Spoofing base: manipulates navigation content
 │   ├── passthrough_attack.py   No spoofing; passes real position through
-│   ├── fabric_attack.py        Jump to a fixed fabricated coordinate
+│   ├── static_attack.py        Static-position spoofing (fixed configured coordinate)
 │   ├── drift_attack.py         Gradually shifts position at a configured rate
-│   ├── jamming_attack.py       Withhold GPS_INPUT after activation
+│   ├── jamming_attack.py       Jamming base: manipulates quality/availability
+│   ├── complete_loss_attack.py Withhold GPS_INPUT after activation (returns None)
+│   ├── degradation_attack.py   Ramp GPS quality down while keeping content authentic
 │   └── replay_attack.py        (WIP)
 ├── communication/
 │   ├── sitl_connection.py      MAVLink connection + ArduPilot parameter management
@@ -25,7 +27,8 @@ gps-attack/
 │   ├── configs/
 │   │   └── gps_receiver_params.yaml   Signal quality + normalization constants
 │   ├── drone.py                Composes GPS receiver, IMU, compass, and clock
-│   ├── gps_receiver.py         Stores position/velocity; syncs from GLOBAL_POSITION_INT
+│   ├── gps_receiver.py         Stores position/velocity; builds nominal GpsInputState
+│   ├── gps_input_state.py      Effect-level GPS state passed to/from attacks
 │   ├── imu.py
 │   ├── compass.py
 │   └── clock.py
@@ -43,7 +46,7 @@ gps-attack/
 │   ├── attack/                 Unit tests for each attack class
 │   ├── communication/          Unit tests for SitlConnection
 │   └── drone/                  Unit tests for GpsReceiver
-├── logs/                       ArduPilot .bin DataFlash logs
+├── logs/                       Per-run output folders (injection.csv, metadata.json, flight.bin, vehicle.csv, sitl.log)
 ├── run_simulation.sh           Quickstart: SITL + attack + timestamped log save
 ├── pyproject.toml
 └── requirements.txt
@@ -69,7 +72,7 @@ Tools/environment_install/install-prereqs-ubuntu.sh -y
 
 ```bash
 cat > ~/.ardupilot_profile << 'EOF'
-# ArduPilot SITL tooling for gps-attack local development.
+# ArduPilot SITL tooling for simple-spoof-and-jam local development.
 # sim_vehicle.py lives in the clone; mavproxy.py is pip-installed to ~/.local/bin.
 export PATH="$HOME/ardupilot/Tools/autotest:$HOME/.local/bin:$PATH"
 EOF
@@ -114,7 +117,7 @@ After opening QGroundControl and verifying that the GUI loads, you can close it 
 
 ### Removing the local setup
 
-If you no longer need to use or prototype with the `gps-attack` repo, you can remove the local setup by following these instructions.
+If you no longer need to use or prototype with the `simple-spoof-and-jam` repo, you can remove the local setup by following these instructions.
 
 ```bash
 rm ~/.ardupilot_profile
@@ -134,7 +137,7 @@ fi
 
 ```bash
 ./run_simulation.sh --attack-type passthrough --spawn-location ornl
-./run_simulation.sh --attack-type fabric --spawn-location canberra
+./run_simulation.sh --attack-type static --spawn-location canberra
 ```
 
 Run the script, then open QGroundControl with the matching `.plan` file. Then, arm the flight and start the mission to run the selected mission. You are also highly encouraged to read the detailed walkthrough in the next section to better understand how the repo works.
@@ -170,10 +173,10 @@ You should see a new `ArduCopter` window pop up.
 In a different terminal (Terminal 2):
 
 ```bash
-python3 simulation/run_simulation.py --attack-type passthrough --spawn-location ornl
+python3 -m simulation.run_simulation --attack-type passthrough --spawn-location ornl
 ```
 
-This script starts the GPS attack simulation, with a specified attack type and a spawn location. Leave this terminal running: when the vehicle disarms after landing, it copies the DataFlash log to `logs/passthrough_ornl_<start>_<end>.bin`.
+This script starts the GPS attack simulation, with a specified attack type and a spawn location. Leave this terminal running: when the vehicle disarms after landing, it writes the injection log (`injection.csv`) and run metadata (`metadata.json`) into a per-run folder `logs/<attack>_<spawn>_<start>/`. The DataFlash `flight.bin` and its `vehicle.csv` are added to that same folder by `run_simulation.sh` after SITL is stopped (so the log is fully flushed).
 
 ### Step 3: Open QGroundControl
 
@@ -205,10 +208,10 @@ In QGroundControl **Fly** view, hold the **Start Mission** slider-arm button.
 
 **Expected:** drone takes off to 25 m, flies to all waypoints, then RTLs home. No fence breach alert fires.
 
-When it lands and disarms, Terminal 2 should print `Flight finished (disarmed).` and `Saved flight log: logs/passthrough_ornl_<start>_<end>.bin`. Then Ctrl+C the `sim_vehicle.py` terminal.
+When it lands and disarms, Terminal 2 should print `Flight finished (disarmed).` and `Saved injection log: logs/passthrough_ornl_<start>/injection.csv`. Then Ctrl+C the `sim_vehicle.py` terminal.
 
 ![ORNL Finished Flight](icons/ornl_finished_flight.png)
 
-AUTO-01 is complete when that timestamped `.bin` exists and the QGroundControl map shows a clean rectangular path with no geofence breach.
+AUTO-01 is complete when the per-run folder `logs/passthrough_ornl_<start>/` exists and the QGroundControl map shows a clean rectangular path with no geofence breach.
 
 ---

@@ -76,3 +76,48 @@ class TestGpsReceiver:
         receiver.sync_position_and_velocity_to_sitl(connection)
 
         assert receiver.get_position() == pytest.approx((35.9305, -84.3107, 50.0))
+
+
+class TestNominalGpsStateTruthTracking:
+
+    def _receiver_with_reported(self):
+        r = GpsReceiver()
+        r.update_position(10.0, 20.0, 100.0)   # reported (EKF) values
+        r.update_velocity(1.0, 2.0, -0.5)
+        return r
+
+    def test_uses_truth_position_and_horizontal_velocity_when_available(self):
+        r = self._receiver_with_reported()
+        r.truth_lat = 35.0
+        r.truth_lon = -84.0
+        r.truth_velocity_north = 3.0
+        r.truth_velocity_east = 4.0
+        s = r.nominal_gps_state()
+        assert s.lat == 35.0 and s.lon == -84.0
+        assert s.vn == 3.0 and s.ve == 4.0
+
+    def test_alt_and_vd_stay_reported_even_when_truth_present(self):
+        # No SIMSTATE altitude / no real truth vertical velocity exist.
+        r = self._receiver_with_reported()
+        r.truth_lat = 35.0
+        r.truth_lon = -84.0
+        r.truth_velocity_north = 3.0
+        r.truth_velocity_east = 4.0
+        r.truth_velocity_down = 0.0
+        s = r.nominal_gps_state()
+        assert s.alt == 100.0      # reported
+        assert s.vd == -0.5        # reported vertical velocity, not the 0.0 placeholder
+
+    def test_falls_back_to_reported_before_truth_is_synced(self):
+        r = self._receiver_with_reported()  # truth_* still None from __init__
+        s = r.nominal_gps_state()
+        assert (s.lat, s.lon) == (10.0, 20.0)
+        assert (s.vn, s.ve) == (1.0, 2.0)
+
+    def test_quality_fields_unchanged(self):
+        r = self._receiver_with_reported()
+        r.truth_lat, r.truth_lon = 35.0, -84.0
+        s = r.nominal_gps_state()
+        q = r.signal_quality_params
+        assert s.fix_type == q["fix_type_3d"]
+        assert s.horizontal_accuracy == q["horizontal_accuracy"]

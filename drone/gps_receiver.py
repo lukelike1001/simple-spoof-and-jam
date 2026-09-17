@@ -5,8 +5,16 @@ from pathlib import Path
 import yaml
 
 from communication.sitl_connection import SitlConnection
+from drone.gps_input_state import GpsInputState
 
 GPS_RECEIVER_CONFIG_PATH = Path(__file__).parent / "configs" / "gps_receiver_params.yaml"
+
+
+def _num_or(value, fallback):
+    """Return value if it is a real number, else fallback (e.g. truth not yet synced)."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value
+    return fallback
 
 class GpsReceiver:
     """Software representation of the drone's GPS receiver, which stores
@@ -116,6 +124,43 @@ class GpsReceiver:
             self.truth_lon = lon
             self._truth_time = now
     
+
+    def nominal_gps_state(self) -> GpsInputState:
+        """Build the authentic/nominal effect-level GPS state an attack receives.
+
+        Navigation content tracks independent SITL truth (SIMSTATE) rather than
+        ArduPilot's own EKF estimate (GLOBAL_POSITION_INT), so that e_inject
+        measures deliberate attack content and not estimator error fed back
+        through the simulator. Horizontal position (lat/lon) and horizontal
+        velocity (vn/ve) come from truth when available, falling back to the
+        reported values before the first SIMSTATE arrives.
+
+        Two components have no trustworthy truth source over MAVLink and keep
+        their reported (EKF-derived) values, explicitly rather than silently:
+          - alt: SIMSTATE carries no altitude field.
+          - vd:  truth_velocity_down is a fixed 0.0 placeholder, not real truth.
+        Both are vertical and do not affect the horizontal e_inject metric.
+        """
+        q = self.signal_quality_params
+        lat = _num_or(self.truth_lat, self.lat)
+        lon = _num_or(self.truth_lon, self.lon)
+        vn = _num_or(self.truth_velocity_north, self.velocity_north)
+        ve = _num_or(self.truth_velocity_east, self.velocity_east)
+        return GpsInputState(
+            lat=lat,
+            lon=lon,
+            alt=self.alt,
+            vn=vn,
+            ve=ve,
+            vd=self.velocity_down,
+            fix_type=q["fix_type_3d"],
+            satellites_visible=q["satellites_visible_count"],
+            hdop=q["hdop"],
+            vdop=q["vdop"],
+            horizontal_accuracy=q["horizontal_accuracy"],
+            vertical_accuracy=q["vertical_accuracy"],
+            speed_accuracy=q["speed_accuracy"],
+        )
 
     def get_signal_quality_params(self):
         """Returns the signal quality params used for sending GPS input messages via MAVLink.

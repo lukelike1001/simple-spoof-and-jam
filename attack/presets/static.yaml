@@ -1,11 +1,17 @@
-type: "jamming"
+type: "static"
 
 canberra:
+  static_lat: -35.263261
+  static_lon: 149.26523
+  static_alt: 614.0
   activation_alt: 30.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 
 ornl:
+  static_lat: 35.9442323021756
+  static_lon: -84.31181199768014
+  static_alt: 50.0
   activation_alt: 25.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 5

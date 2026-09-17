@@ -1,16 +1,22 @@
 type: "drift"
 
+# Drift injects truth + (rate * seconds_since_activation), so the accumulated
+# horizontal offset from truth is |rate| * t. Rates chosen so the injected
+# content departs from truth by tens of metres over the post-activation window
+# (|rate| ~ 0.72 m/s -> ~29 m at 40 s, ~65 m at 90 s), not <1 m as before.
+# ORNL activation_delay matches the other attacks (5 s) so all five runs share
+# the same activation condition and leave a comparable post-activation window.
+
 canberra:
-  drift_rate_north: 0.08
-  drift_rate_east: 0.12
+  drift_rate_north: 0.4
+  drift_rate_east: 0.6
   activation_alt: 30.0
   activation_alt_tolerance: 1.0
   activation_delay_seconds: 10
 
 ornl:
-  drift_rate_north: 0.02
-  drift_rate_east: 0.06
+  drift_rate_north: 0.4
+  drift_rate_east: 0.6
   activation_alt: 25.0
   activation_alt_tolerance: 1.0
-  activation_delay_seconds: 20
-
+  activation_delay_seconds: 5

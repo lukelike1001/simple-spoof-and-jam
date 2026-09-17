@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from attack.jamming_attack import JammingAttack
+from attack.complete_loss_attack import CompleteLossAttack
 from attack.passthrough_attack import PassthroughAttack
 
 
@@ -17,12 +17,12 @@ class TestCheckActivationAltitude:
         assert attack.check_activation_altitude(_receiver(0.0), 0.0) is True
 
     def test_stays_inactive_below_activation_altitude(self):
-        attack = JammingAttack("jamming", "ornl")
+        attack = CompleteLossAttack("complete_loss", "ornl")
         assert attack.check_activation_altitude(_receiver(5.0), 0.0) is False
         assert attack.check_activation_altitude(_receiver(5.0), 30.0) is False
 
     def test_fires_after_delay_once_altitude_is_reached(self):
-        attack = JammingAttack("jamming", "ornl")
+        attack = CompleteLossAttack("complete_loss", "ornl")
         receiver = _receiver(25.0)
         assert attack.check_activation_altitude(receiver, 0.0) is False
         assert attack.check_activation_altitude(receiver, 5.0) is True
