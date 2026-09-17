@@ -1,0 +1,9 @@
+{
+  "activation_elapsed_s": null,
+  "attack_duration_seconds": 240,
+  "attack_params": null,
+  "attack_type": "passthrough",
+  "gps_input_rate_hz": 5,
+  "spawn_location": "ornl",
+  "start_utc": "20260917T164501Z"
+}

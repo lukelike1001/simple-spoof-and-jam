@@ -1,0 +1,15 @@
+{
+  "activation_elapsed_s": 72.95310003699979,
+  "attack_duration_seconds": 240,
+  "attack_params": {
+    "activation_alt": 25.0,
+    "activation_alt_tolerance": 1.0,
+    "activation_delay_seconds": 5,
+    "drift_rate_east": 0.6,
+    "drift_rate_north": 0.4
+  },
+  "attack_type": "drift",
+  "gps_input_rate_hz": 5,
+  "spawn_location": "ornl",
+  "start_utc": "20260917T165556Z"
+}

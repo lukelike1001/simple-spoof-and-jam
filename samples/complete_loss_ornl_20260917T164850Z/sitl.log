@@ -1,0 +1,251 @@
+Setting top to                           : /home/lnam/ardupilot 
+Setting out to                           : /home/lnam/ardupilot/build 
+Autoconfiguration                        : enabled 
+Checking for program 'python'            : /usr/bin/python3 
+Checking for python version >= 3.6.9     : 3.10.12 
+Setting board to                         : sitl 
+Using toolchain                          : native 
+Checking for 'g++' (C++ compiler)        : /usr/lib/ccache/g++ 
+Checking for 'gcc' (C compiler)          : /usr/lib/ccache/gcc 
+Checking for c flags '-MMD'              : yes 
+Checking for cxx flags '-MMD'            : yes 
+CXX Compiler                             : g++ 11.4.0 
+Checking for need to link with librt     : not necessary 
+Checking for feenableexcept              : yes 
+Enabling -Werror                         : yes 
+Enabled OpenDroneID                      : no 
+Enabled firmware ID checking             : no 
+GPS Debug Logging                        : no 
+Enabled custom controller                : yes 
+Checking for HAVE_CMATH_ISFINITE         : yes 
+Checking for HAVE_CMATH_ISINF            : yes 
+Checking for HAVE_CMATH_ISNAN            : yes 
+Checking for NEED_CMATH_ISFINITE_STD_NAMESPACE : yes 
+Checking for NEED_CMATH_ISINF_STD_NAMESPACE    : yes 
+Checking for NEED_CMATH_ISNAN_STD_NAMESPACE    : yes 
+Checking for header endian.h                   : yes 
+Checking for header byteswap.h                 : yes 
+Checking for HAVE_MEMRCHR                      : yes 
+Configured VSCode Intellisense:                : no 
+DC_DSDL compiler in                            : /home/lnam/ardupilot/modules/DroneCAN/dronecan_dsdlc 
+Source is git repository                       : yes 
+Update submodules                              : yes 
+Checking for program 'git'                     : /usr/bin/git 
+Checking for program 'size'                    : /usr/bin/size 
+Benchmarks                                     : disabled 
+Unit tests                                     : enabled 
+Scripting                                      : maybe 
+Scripting runtime checks                       : enabled 
+Debug build                                    : disabled 
+Coverage build                                 : disabled 
+Force 32-bit build                             : disabled 
+Checking for program 'rsync'                   : /usr/bin/rsync 
+Removing target_list file /home/lnam/ardupilot/build/sitl/target_list
+'configure' finished successfully (0.986s)
+Waf: Entering directory `/home/lnam/ardupilot/build/sitl'
+Embedding file locations.txt:Tools/autotest/locations.txt
+Embedding file models/Callisto.json:Tools/autotest/models/Callisto.json
+Embedding file models/freestyle.json:Tools/autotest/models/freestyle.json
+Embedding file models/plane-3d.parm:Tools/autotest/models/plane-3d.parm
+Embedding file models/plane.parm:Tools/autotest/models/plane.parm
+Embedding file models/xplane_heli.json:Tools/autotest/models/xplane_heli.json
+Embedding file models/xplane_plane.json:Tools/autotest/models/xplane_plane.json
+No target_list file found, creating
+Generating compile_commands.json
+Build commands will be stored in build/sitl/compile_commands.json
+Generating compile_commands.json
+Build commands will be stored in build/sitl/compile_commands.json
+[1348/1349] Linking build/sitl/bin/arducopter
+[1349/1349] checking symbols build/sitl/bin/arducopter
+Waf: Leaving directory `/home/lnam/ardupilot/build/sitl'
+
+BUILD SUMMARY
+Build directory: /home/lnam/ardupilot/build/sitl
+Target          Text (B)  Data (B)  BSS (B)  Total Flash Used (B)  Free Flash (B)  External Flash Used (B)
+----------------------------------------------------------------------------------------------------------
+bin/arducopter   4192048    194013   224480               4386061  Not Applicable  Not Applicable         
+
+'build' finished successfully (2.698s)
+RiTW: Starting ArduCopter : /home/lnam/ardupilot/build/sitl/bin/arducopter -S --model + --speedup 1 --slave 0 --defaults ../../ardupilot/Tools/autotest/default_params/copter.parm --sim-address=127.0.0.1 -I0 --home 35.93051398,-84.31067453,0.0,0.0
+Connect tcp:127.0.0.1:5760 source_system=255
+Log Directory: 
+Telemetry log: mav.tlog
+Waiting for heartbeat from tcp:127.0.0.1:5760
+MAV> AP: Calibrating barometer
+Detected vehicle 1:1 on link 0
+online system 1
+STABILIZE> Mode STABILIZE
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+AP: ArduCopter V4.6.3 (92b0cd78)
+AP: 2bc5b3b0621947f48f5405d63e8af36d
+AP: Frame: QUAD/PLUS
+Got COMMAND_ACK: PREFLIGHT_REBOOT_SHUTDOWN: ACCEPTED
+EOF on TCP socket
+Attempting reconnect
+[Errno 111] Connection refused sleeping
+
+
+Init ArduCopter V4.6.3 (92b0cd78)
+
+Free RAM: 524288
+Booting 0/0
+0 0 0 AP_Logger_File: buffer size=204800
+AP: Calibrating barometer
+AP: Barometer 1 calibration complete
+AP: Barometer 2 calibration complete
+Init Gyro*Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+*Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: REQUEST_MESSAGE: FAILED
+Got COMMAND_ACK: REQUEST_MESSAGE: FAILED
+Got COMMAND_ACK: REQUEST_MESSAGE: FAILED
+Got COMMAND_ACK: REQUEST_MESSAGE: FAILED
+Got COMMAND_ACK: REQUEST_MESSAGE: FAILED
+Got COMMAND_ACK: REQUEST_MESSAGE: FAILED
+FTP reply for mavlink component 190
+AP: ArduCopter V4.6.3 (92b0cd78)
+AP: 2bc5b3b0621947f48f5405d63e8af36d
+AP: Frame: QUAD/PLUS
+
+AP: ArduPilot Ready
+AP: AHRS: DCM active
+AP: GPS 1: specified as MAV
+AP: RC7: SaveWaypoint LOW
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+AP: GPS 1: detected MAV
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+Got COMMAND_ACK: REQUEST_MESSAGE: ACCEPTED
+AP: EKF3 IMU0 initialised
+AP: EKF3 IMU1 initialised
+AP: AHRS: EKF3 active
+fence present
+fence enabled
+AP: EKF3 IMU0 tilt alignment complete
+AP: EKF3 IMU1 tilt alignment complete
+AP: EKF3 IMU1 MAG0 initial yaw alignment complete
+AP: EKF3 IMU0 MAG0 initial yaw alignment complete
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: INVALID_SEQUENCE
+Got MISSION_ACK: TYPE_MISSION: ACCEPTED
+Got MISSION_ACK: TYPE_MISSION: ERROR
+Got MISSION_ACK: TYPE_MISSION: ERROR
+Got MISSION_ACK: TYPE_MISSION: ERROR
+AP: Flight plan received
+Got MISSION_ACK: TYPE_FENCE: ACCEPTED
+Got MISSION_ACK: TYPE_FENCE: ACCEPTED
+AP: Fence Indexed OK
+Got MISSION_ACK: TYPE_RALLY: ACCEPTED
+Got MISSION_ACK: TYPE_RALLY: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+Got COMMAND_ACK: SET_MESSAGE_INTERVAL: ACCEPTED
+AP: EKF3 IMU1 origin set
+AP: EKF3 IMU0 origin set
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: PreArm: GPS 1: not healthy
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: EKF3 IMU0 is using GPS
+AP: EKF3 IMU1 is using GPS
+GPS lock at 0 meters
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+Got COMMAND_ACK: COMPONENT_ARM_DISARM: ACCEPTED
+Got COMMAND_ACK: COMPONENT_ARM_DISARM: ACCEPTED
+AP: Terrain: clamping offset -252 to -30
+AP: Arming motors
+ARMED
+Arming checks disabled
+Got COMMAND_ACK: MISSION_START: ACCEPTED
+Got COMMAND_ACK: MISSION_START: ACCEPTED
+AUTO> Mode AUTO
+AP: Mission: 1 Takeoff
+waypoint 1
+AP: EKF3 IMU1 MAG0 in-flight yaw alignment complete
+AP: EKF3 IMU0 MAG0 in-flight yaw alignment complete
+height 18
+height 28
+AP: Mission: 2 WP
+waypoint 2
+AP: EKF3 lane switch 1
+AP: EKF primary changed:1
+GPS fix lost
+LAND> Mode LAND
+AP: EKF variance
+AP: EKF Failsafe: changed to LAND Mode
+AP: EKF3 IMU0 stopped aiding
+AP: EKF3 lane switch 0
+AP: EKF primary changed:0
+AP: EKF3 IMU1 stopped aiding
+height 18
+AP: SmartRTL deactivated: bad position
+AP: SIM Hit ground at 0.554268 m/s
+AP: Disarming motors
+DISARMED
+AP: Field Elevation Set: 0m
+waypoint 0
+height 5
+AP: PreArm: GPS 1: Bad fix
+AP: PreArm: Fence requires position
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+AP: Field Elevation Set: 0m
+EOF on TCP socket
+Attempting reconnect
+[Errno 111] Connection refused sleeping
+[Errno 111] Connection refused sleeping
+Clean shutdown impossible, forcing an exit
+SIM_VEHICLE: Start
+SIM_VEHICLE: Killing tasks
+SIM_VEHICLE: Starting up at [35.93051398, -84.31067453, 0.0, 0.0]
+SIM_VEHICLE: WAF build
+SIM_VEHICLE: Configure waf
+SIM_VEHICLE: "/home/lnam/ardupilot/modules/waf/waf-light" "configure" "--board" "sitl"
+{'model': '+', 'waf_target': 'bin/arducopter', 'default_params_filename': 'default_params/copter.parm', 'sitl-port': True}
+SIM_VEHICLE: Building
+SIM_VEHICLE: "/home/lnam/ardupilot/modules/waf/waf-light" "build" "--target" "bin/arducopter"
+SIM_VEHICLE: Using defaults from (../../ardupilot/Tools/autotest/default_params/copter.parm)
+SIM_VEHICLE: Run ArduCopter
+SIM_VEHICLE: "/home/lnam/ardupilot/Tools/autotest/run_in_terminal_window.sh" "ArduCopter" "/home/lnam/ardupilot/build/sitl/bin/arducopter" "-S" "--model" "+" "--speedup" "1" "--slave" "0" "--defaults" "../../ardupilot/Tools/autotest/default_params/copter.parm" "--sim-address=127.0.0.1" "-I0" "--home" "35.93051398,-84.31067453,0.0,0.0"
+SIM_VEHICLE: Run MavProxy
+SIM_VEHICLE: "mavproxy.py" "--out" "127.0.0.1:14550" "--master" "tcp:127.0.0.1:5760" "--sitl" "127.0.0.1:5501" "--out" "udp:127.0.0.1:14550" "--out" "udp:127.0.0.1:14551"
+SIM_VEHICLE: MAVProxy exited
+SIM_VEHICLE: Killing tasks

@@ -1,0 +1,16 @@
+{
+  "activation_elapsed_s": 66.89543755300019,
+  "attack_duration_seconds": 240,
+  "attack_params": {
+    "activation_alt": 25.0,
+    "activation_alt_tolerance": 1.0,
+    "activation_delay_seconds": 5,
+    "static_alt": 50.0,
+    "static_lat": 35.9442323021756,
+    "static_lon": -84.31181199768014
+  },
+  "attack_type": "static",
+  "gps_input_rate_hz": 5,
+  "spawn_location": "ornl",
+  "start_utc": "20260917T165352Z"
+}
