@@ -70,3 +70,22 @@ class TestDriftAttack:
         state = drift_attack.apply(nominal, receiver, elapsed_seconds=0.0)
         assert state.lat == pytest.approx(36.0)
         assert state.lon == pytest.approx(-84.0)
+
+    def test_apply_returns_state_not_none(self, drift_attack, receiver):
+        assert drift_attack.apply(_nominal(), receiver, elapsed_seconds=10.0) is not None
+
+    def test_apply_leaves_quality_fields_unchanged(self, drift_attack, receiver):
+        nominal = _nominal()
+        state = drift_attack.apply(nominal, receiver, elapsed_seconds=10.0)
+        for field in (
+            "fix_type", "satellites_visible", "hdop", "vdop",
+            "horizontal_accuracy", "vertical_accuracy", "speed_accuracy",
+        ):
+            assert getattr(state, field) == getattr(nominal, field)
+
+    def test_apply_changes_only_navigation_content_fields(self, drift_attack, receiver):
+        nominal = _nominal()
+        state = drift_attack.apply(nominal, receiver, elapsed_seconds=10.0)
+        for field in nominal.__dataclass_fields__:
+            if getattr(state, field) != getattr(nominal, field):
+                assert field in ("lat", "lon", "alt", "vn", "ve", "vd")
